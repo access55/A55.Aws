@@ -1,34 +1,38 @@
 using A55.Extensions.Configuration.Aws.SecretsManager.Core;
 using Amazon.SecretsManager;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace A55.Extensions.Configuration.Aws.SecretsManager;
 
-public sealed class AwsSecretsManagerConfigurationSource : IConfigurationSource
+sealed class SecretsManagerConfigurationSource : SecretsManagerConfigurationSourceBase
 {
-    readonly AwsSharedSettings settings;
-    readonly IHostEnvironment environment;
-    readonly AwsSecretsManager secretsManager;
-
-    public AwsSecretsManagerConfigurationSource(
+    public SecretsManagerConfigurationSource(
         AwsSharedSettings settings,
-        IHostEnvironment environment) :
-        this(settings, environment, SecretsManagerClientFactory.Create(settings))
+        KeyPathSettings keyPathSettings,
+        IAmazonSecretsManager secretsManagerClient,
+        int maxListSecretsCount
+    ) : base(
+        new SecretsManagerService(secretsManagerClient),
+        GetLogger(),
+        settings,
+        new KeyEnvPathsRenderer(new EnvAliasMapper(), keyPathSettings),
+        maxListSecretsCount
+    )
     {
     }
 
-    public AwsSecretsManagerConfigurationSource(
-        AwsSharedSettings settings,
-        IHostEnvironment environment,
-        IAmazonSecretsManager secretsManager)
+    static ILogger GetLogger()
     {
-        this.settings = settings;
-        this.environment = environment;
-        this.secretsManager =
-            new AwsSecretsManager(secretsManager, environment.EnvironmentName, environment.ApplicationName);
-    }
+        using var loggerFactory = LoggerFactory.Create(loggingBuilder => loggingBuilder
+            .SetMinimumLevel(LogLevel.Trace)
+            .AddSimpleConsole(c =>
+            {
+                c.IncludeScopes = true;
+                c.SingleLine = true;
+                c.ColorBehavior = LoggerColorBehavior.Disabled;
+            }));
 
-    public IConfigurationProvider Build(IConfigurationBuilder builder) =>
-        new SecretsManagerConfigurationProvider(secretsManager, settings);
+        return loggerFactory.CreateLogger<SecretsManagerConfigurationSource>();
+    }
 }

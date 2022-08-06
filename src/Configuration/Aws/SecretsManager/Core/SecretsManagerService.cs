@@ -1,43 +1,25 @@
+using A55.Extensions.Configuration.Aws.SecretsManager.Abstraction;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Extensions.Caching;
-using Amazon.SecretsManager.Model;
-using Microsoft.Extensions.Hosting;
 
 namespace A55.Extensions.Configuration.Aws.SecretsManager.Core;
 
-class AwsSecretsManager
+class SecretsManagerService : ISecretsManagerService
 {
     readonly IAmazonSecretsManager secretsManagerClient;
     readonly SecretsManagerCache cache;
-    readonly string env;
-    readonly string appName;
 
-    public AwsSecretsManager(
-        IAmazonSecretsManager secretsManagerClient,
-        string environmentName,
-        string applicationName
-    )
+    public SecretsManagerService(IAmazonSecretsManager secretsManagerClient)
     {
         this.secretsManagerClient = secretsManagerClient;
-        cache = new(this.secretsManagerClient);
-
-        env = EnvAlias.From(environmentName);
-        this.appName = applicationName.ToLower();
+        cache = new(secretsManagerClient);
     }
 
-    public async Task<IDictionary<string, string>> GetProjectSecrets()
+    public async Task<IDictionary<string, string>> GetProjectSecrets(IEnumerable<string> paths, int maxResults)
     {
         var secretsResponse = await secretsManagerClient.ListSecretsAsync(new()
         {
-            MaxResults = 100,
-            Filters = new List<Filter>
-            {
-                new()
-                {
-                    Key = "name",
-                    Values = new List<string> {"/settings/shared", $"/settings/{appName}/{env}/"}
-                }
-            }
+            MaxResults = maxResults, Filters = new() {new() {Key = "name", Values = paths.ToList()}}
         });
 
         var secretsQuery =
@@ -54,5 +36,6 @@ class AwsSecretsManager
         return result;
     }
 
-    public Task<string> GetSecretString(string keyName) => cache.GetSecretString(keyName);
+    public async ValueTask<string> GetSecretString(string keyName) =>
+        await cache.GetSecretString(keyName);
 }

@@ -1,50 +1,39 @@
 ﻿using System.Text;
 using System.Text.Json.Nodes;
+using A55.Extensions.Configuration.Aws.SecretsManager.Abstraction;
 using A55.Extensions.Configuration.Aws.SecretsManager.Core;
-using Amazon.SecretsManager;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using Npgsql;
 
 namespace A55.Extensions.Configuration.Aws.SecretsManager;
 
 class SecretsManagerConfigurationProvider : ConfigurationProvider
 {
-    readonly AwsSharedSettings settings;
-    readonly AwsSecretsManager secretsManager;
+    readonly ISecretsManagerService secretsManagerService;
+    readonly IKeyPathsRenderer pathsRenderer;
+    readonly int maxListSecretsCount;
+    readonly ILogger logger;
 
     internal SecretsManagerConfigurationProvider(
-        AwsSecretsManager secretsManager,
-        AwsSharedSettings settings)
+        ISecretsManagerService secretsManagerService,
+        IKeyPathsRenderer pathsRenderer,
+        int maxListSecretsCount,
+        ILogger logger)
     {
-        this.settings = settings;
-        this.secretsManager = secretsManager;
+        this.secretsManagerService = secretsManagerService;
+        this.pathsRenderer = pathsRenderer;
+        this.maxListSecretsCount = maxListSecretsCount;
+        this.logger = logger;
     }
 
     public override void Load()
     {
-        using var loggerFactory = LoggerFactory.Create(loggingBuilder => loggingBuilder
-            .SetMinimumLevel(LogLevel.Trace)
-            .AddSimpleConsole(c =>
-            {
-                c.IncludeScopes = true;
-                c.SingleLine = true;
-                c.ColorBehavior = LoggerColorBehavior.Disabled;
-            }));
-
-        var logger = loggerFactory.CreateLogger<SecretsManagerConfigurationProvider>();
-
-        logger.LogInformation("Loading secret manager resources");
-        if (!settings.ReadSettingsFromSecretsManager)
-        {
-            logger.LogInformation("Skipping secret manager resources");
-            return;
-        }
-
         logger.LogInformation("Listing secrets");
-        var secrets = secretsManager.GetProjectSecrets().GetAwaiter().GetResult();
+        var keyPaths = pathsRenderer.GetPaths();
+        var secrets = secretsManagerService
+            .GetProjectSecrets(keyPaths, maxListSecretsCount)
+            .GetAwaiter().GetResult();
 
         foreach (var (key, value) in secrets)
         {
@@ -90,6 +79,6 @@ class SecretsManagerConfigurationProvider : ConfigurationProvider
             Data["ConnectionStrings:DefaultConnection"] = defaultConnectionString.ToString();
         }
 
-        logger.LogInformation("Finish secret manager resource load");
+        logger.LogInformation("Finish SecretsManager resource load");
     }
 }

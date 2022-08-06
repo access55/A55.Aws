@@ -5,9 +5,9 @@ using Amazon.Runtime.CredentialManagement;
 
 namespace A55.Extensions.Configuration.Aws.SecretsManager.Core;
 
-static class SecretsManagerClientFactory
+static class AmazonSecretsManagerClientFactory
 {
-    internal static AWSCredentials GetAwsCredentials(AwsSharedSettings settings) =>
+    static AWSCredentials? TryGetAwsCredentials(AwsSharedSettings settings) =>
         settings switch
         {
             {
@@ -27,9 +27,22 @@ static class SecretsManagerClientFactory
                 && AWSCredentialsFactory.TryGetAWSCredentials(profile, sharedFile, out var credentials)
                 => credentials,
 
-            _ => throw new InvalidOperationException("No AWS profile found"),
+            _ => null
         };
 
+    static RegionEndpoint? TryEndpoint(AwsSharedSettings config) =>
+        config.RegionShared is not null
+            ? RegionEndpoint.GetBySystemName(config.RegionShared)
+            : null;
+
     internal static IAmazonSecretsManager Create(AwsSharedSettings config) =>
-        new AmazonSecretsManagerClient(GetAwsCredentials(config), RegionEndpoint.GetBySystemName(config.RegionShared));
+        (TryGetAwsCredentials(config), TryEndpoint(config)) switch
+        {
+            ({ } credentials, { } endpoint) =>
+                new AmazonSecretsManagerClient(credentials, endpoint),
+            (null, { } endpoint) =>
+                new AmazonSecretsManagerClient(endpoint),
+            _ =>
+                new AmazonSecretsManagerClient()
+        };
 }

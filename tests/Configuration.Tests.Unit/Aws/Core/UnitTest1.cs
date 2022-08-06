@@ -1,8 +1,8 @@
 using NUnit.Framework;
 
-namespace A55.Extensions.Configuration.Tests;
+namespace A55.Extensions.Configuration.Tests.Aws.Core;
 
-public class Tests
+public class EnvAliasTests
 {
     [Test]
     public void Test1()

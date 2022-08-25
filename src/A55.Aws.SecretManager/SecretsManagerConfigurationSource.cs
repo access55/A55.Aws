@@ -112,8 +112,17 @@ class AwsSecretsManagerConfigurationProvider : ConfigurationProvider
     }
 }
 
+/// <summary>
+/// Secrets Manager Configuration extensions
+/// </summary>
 public static class ConfigurationBuilderExtensions
 {
+    /// <summary>
+    /// Add Secrets Manager Configuration source
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="applicationName"></param>
+    /// <returns></returns>
     public static IConfigurationBuilder AddSecretsManager(this IConfigurationBuilder builder, string? applicationName = null)
     {
         var tempConfig = builder.Build();

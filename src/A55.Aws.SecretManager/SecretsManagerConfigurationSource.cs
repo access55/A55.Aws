@@ -60,8 +60,8 @@ class AwsSecretsManagerConfigurationProvider : ConfigurationProvider
         logger.LogInformation("Listing secrets for {ApplicationName} on {EnvironmentName}",
             projectName, environmentName);
 
-        var SecretsManagerClient = AmazonSecretsManagerClientFactory.Create(settings);
-        var secrets = new AwsSecretsManager(SecretsManagerClient, environmentName, projectName)
+        var secretsManagerClient = AmazonSecretsManagerClientFactory.Create(settings);
+        var secrets = new AwsSecretsManager(secretsManagerClient, environmentName, projectName)
             .GetProjectSecrets().GetAwaiter().GetResult();
 
         foreach (var (key, value) in secrets)

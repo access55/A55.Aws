@@ -1,6 +1,3 @@
-using Amazon;
-using Amazon.Runtime;
-using Amazon.Runtime.CredentialManagement;
 using Microsoft.Extensions.Configuration;
 
 namespace A55.Extensions.Configuration.Aws.SecretsManager;

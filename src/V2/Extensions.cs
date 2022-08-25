@@ -1,6 +1,4 @@
-﻿using A55.Extensions.Configuration.Aws;
-
-namespace A55.Extensions.Configuration;
+﻿namespace A55.Extensions.Configuration;
 
 static class InternalExtensions
 {

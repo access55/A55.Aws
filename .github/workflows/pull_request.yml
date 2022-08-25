@@ -3,10 +3,7 @@ name: PR
 on:
   pull_request:
     branches: ["master"]
-    paths:
-      - '**/*.cs'
-      - '**/*.csproj'
-      - 'global.json'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -45,4 +42,4 @@ jobs:
       run: dotnet format --verify-no-changes .
 
     - name: Build
-      run: dotnet build src/signoz.aspnetcore --configuration release
+      run: dotnet build  --configuration release

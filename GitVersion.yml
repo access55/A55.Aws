@@ -1,6 +1,5 @@
 next-version: 1.0.0
 mode: Mainline
-tag-prefix: "[vV]"
 continuous-delivery-fallback-tag: ""
 major-version-bump-message: '^(breaking|major):'
 minor-version-bump-message: '^(feature|minor):'

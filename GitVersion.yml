@@ -1,13 +1,8 @@
 next-version: 1.0.0
 mode: Mainline
+source-branches: ['master']
 continuous-delivery-fallback-tag: ""
 major-version-bump-message: '^(breaking|major):'
 minor-version-bump-message: '^(feature|minor):'
 patch-version-bump-message: '^(fix|patch):'
 no-bump-message: '^(none|skip):'
-
-commit-message-incrementing: Enabled
-
-branches:
-    master:
-        is-mainline: true

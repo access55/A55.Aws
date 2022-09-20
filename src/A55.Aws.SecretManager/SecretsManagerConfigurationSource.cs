@@ -1,6 +1,8 @@
+using System.Reflection;
 using System.Text;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -38,14 +40,26 @@ class AwsSecretsManagerConfigurationProvider : ConfigurationProvider
 
     public override void Load()
     {
-        using var loggerFactory = LoggerFactory.Create(loggingBuilder => loggingBuilder
-            .SetMinimumLevel(LogLevel.Information)
-            .AddSimpleConsole(c =>
-            {
-                c.IncludeScopes = true;
-                c.SingleLine = true;
-                c.ColorBehavior = LoggerColorBehavior.Disabled;
-            }));
+        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environments.Development;
+
+        using var configuration = new ConfigurationManager();
+        configuration
+            .SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ??
+                         Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables();
+
+        var logLevel = configuration.GetValue<LogLevel?>("Logging:LogLevel:Default") ?? LogLevel.Information;
+        using var loggerFactory =
+            LoggerFactory.Create(loggingBuilder => loggingBuilder
+                .SetMinimumLevel(logLevel)
+                .AddSimpleConsole(c =>
+                {
+                    c.IncludeScopes = true;
+                    c.SingleLine = true;
+                    c.ColorBehavior = LoggerColorBehavior.Disabled;
+                }));
 
         var logger = loggerFactory.CreateLogger<AwsSecretsManagerConfigurationProvider>();
 
@@ -56,7 +70,6 @@ class AwsSecretsManagerConfigurationProvider : ConfigurationProvider
             return;
         }
 
-        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environments.Development;
         logger.LogInformation("Listing secrets for {ApplicationName} on {EnvironmentName}",
             projectName, environmentName);
 
@@ -123,7 +136,8 @@ public static class ConfigurationBuilderExtensions
     /// <param name="builder"></param>
     /// <param name="applicationName"></param>
     /// <returns></returns>
-    public static IConfigurationBuilder AddSecretsManager(this IConfigurationBuilder builder, string? applicationName = null)
+    public static IConfigurationBuilder AddSecretsManager(this IConfigurationBuilder builder,
+        string? applicationName = null)
     {
         var tempConfig = builder.Build();
         var settings = tempConfig.Get<AwsSettings>();

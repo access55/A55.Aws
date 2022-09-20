@@ -65,11 +65,11 @@ dotnet_naming_rule.constant_fields_should_be_pascal_case.style    = pascal_case_
 # fields case preferences
 dotnet_naming_symbols.private_field_symbols.applicable_kinds = field
 dotnet_naming_symbols.private_field_symbols.applicable_accessibilities = private
-
 dotnet_naming_rule.private_field_symbols_should_be_camel_case.symbols = private_field_symbols
 dotnet_naming_rule.private_field_symbols_should_be_camel_case.severity = warning
 dotnet_naming_rule.private_field_symbols_should_be_camel_case.style = camel_case_style
 
+# protected fields
 dotnet_naming_symbols.protected_field_symbols.applicable_kinds = field
 dotnet_naming_symbols.protected_field_symbols.applicable_accessibilities = protected
 dotnet_naming_rule.protected_field_symbols_should_be_camel_case.symbols = protected_field_symbols

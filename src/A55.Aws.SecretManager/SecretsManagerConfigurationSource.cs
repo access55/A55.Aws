@@ -40,17 +40,20 @@ class AwsSecretsManagerConfigurationProvider : ConfigurationProvider
 
     public override void Load()
     {
-        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environments.Development;
+        var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ??
+                              Environments.Development;
 
         using var configuration = new ConfigurationManager();
         configuration
             .SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ??
                          Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environmentName}.json", optional: true,
+                reloadOnChange: true)
             .AddEnvironmentVariables();
 
-        var logLevel = configuration.GetValue<LogLevel?>("Logging:LogLevel:Default") ?? LogLevel.Information;
+        var logLevel = configuration.GetValue<LogLevel?>("Logging:LogLevel:Default") ??
+                       LogLevel.Information;
         using var loggerFactory =
             LoggerFactory.Create(loggingBuilder => loggingBuilder
                 .SetMinimumLevel(logLevel)
@@ -97,12 +100,19 @@ class AwsSecretsManagerConfigurationProvider : ConfigurationProvider
                 dataKey, string.Join(",", jsonData.Keys));
 
             foreach (var item in jsonData)
-                Data[$"{dataKey}:{item.Key}"] = item.Value;
+            {
+                if (item.Value is null)
+                    continue;
+
+                var keyPath = dataKey is ":" ? item.Key : $"{dataKey}:{item.Key}";
+                Data[keyPath] = item.Value;
+            }
         }
 
         if (secrets.TryGetValue("db", out var dbJsonCredentials))
         {
-            logger.LogInformation("Found db key: mapping it to ConnectionStrings:DefaultConnection");
+            logger.LogInformation(
+                "Found db key: mapping it to ConnectionStrings:DefaultConnection");
             var credentials = JsonNode.Parse(dbJsonCredentials)?.AsObject();
             if (credentials is null)
                 return;
@@ -111,7 +121,8 @@ class AwsSecretsManagerConfigurationProvider : ConfigurationProvider
                 new NpgsqlConnectionStringBuilder
                 {
                     Host = credentials["host"]?.ToString(),
-                    Port = int.TryParse(credentials["port"]?.ToString(), out var port) ? port : 5432,
+                    Port =
+                        int.TryParse(credentials["port"]?.ToString(), out var port) ? port : 5432,
                     Username = credentials["user"]?.ToString(),
                     Password = credentials["password"]?.ToString(),
                     Database = credentials["name"]?.ToString(),
@@ -141,7 +152,8 @@ public static class ConfigurationBuilderExtensions
     {
         var tempConfig = builder.Build();
         var settings = tempConfig.Get<AwsSettings>();
-        var projectName = applicationName ?? tempConfig.GetValue<string>("SecretsManagerProjectKey");
+        var projectName =
+            applicationName ?? tempConfig.GetValue<string>("SecretsManagerProjectKey");
 
         return builder.Add(new AwsSecretsManagerConfigurationSource(settings, projectName));
     }

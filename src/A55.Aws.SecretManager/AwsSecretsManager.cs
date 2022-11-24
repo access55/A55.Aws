@@ -44,7 +44,7 @@ class AwsSecretsManager
     {
         var baseKeys = new List<string>
         {
-            "/settings/shared",
+            "/settings/shared/",
             $"/settings/{projectName}/shared",
             $"/settings/{projectName}/{envAlias}"
         };
@@ -62,12 +62,17 @@ class AwsSecretsManager
             }
         });
 
+        string GetKeyName(string path)
+        {
+            var key = Path.GetFileName(path);
+            return key == envAlias ? "/" : key;
+        }
+
         var secretsQuery =
             secretsResponse.SecretList
                 .Select(secret => secret.Name)
-                // .Concat(baseKeys)
                 .Select(async secretName => (
-                    Key: Path.GetFileName(secretName),
+                    Key: GetKeyName(secretName),
                     Value: await GetSecretString(secretName)));
 
         var result = await Task.WhenAll(secretsQuery);

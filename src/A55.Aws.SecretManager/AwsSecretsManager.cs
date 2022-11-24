@@ -42,6 +42,13 @@ class AwsSecretsManager
 
     public async Task<IDictionary<string, string>> GetProjectSecrets()
     {
+        var baseKeys = new List<string>
+        {
+            "/settings/shared",
+            $"/settings/{projectName}/shared/",
+            $"/settings/{projectName}/{envAlias}/"
+        };
+
         var secretsResponse = await secretsManagerClient.ListSecretsAsync(new()
         {
             MaxResults = 100,
@@ -50,12 +57,7 @@ class AwsSecretsManager
                 new()
                 {
                     Key = "name",
-                    Values = new List<string>
-                    {
-                        "/settings/shared",
-                        $"/settings/{projectName}/shared/",
-                        $"/settings/{projectName}/{envAlias}/"
-                    }
+                    Values = baseKeys,
                 }
             }
         });
@@ -63,6 +65,7 @@ class AwsSecretsManager
         var secretsQuery =
             secretsResponse.SecretList
                 .Select(secret => secret.Name)
+                .Concat(baseKeys)
                 .Select(async secretName => (
                     Key: Path.GetFileName(secretName),
                     Value: await GetSecretString(secretName)));

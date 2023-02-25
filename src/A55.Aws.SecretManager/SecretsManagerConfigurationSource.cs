@@ -82,7 +82,8 @@ class AwsSecretsManagerConfigurationProvider : ConfigurationProvider
 
         foreach (var (key, value) in secrets)
         {
-            var dataKey = key.Replace("/", ":");
+            var dataKey = (key == "shared" ? "/" : key).Replace("/", ":");
+
             if (string.IsNullOrWhiteSpace(value))
             {
                 logger.LogInformation("Key {DataKey} is empty", dataKey);

@@ -65,7 +65,7 @@ class AwsSecretsManager
         string GetKeyName(string path)
         {
             var key = Path.GetFileName(path);
-            return key == envAlias || key == "shared" ? "/" : key;
+            return key == envAlias ? "/" : key;
         }
 
         var secretsQuery =
